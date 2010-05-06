@@ -1,5 +1,6 @@
 check process <%= @worker_name %>
-  with pidfile /data/<%= @app_name %>/shared/pids/<%= @worker_name %>.pid
-  start program = "/bin/su -c '/data/<%= @app_name %>/current/script/delayed_job -e <%= @framework_env %> start' - <%= @user %>"
-  stop program = "/bin/su -c '/data/<%= @app_name %>/current/script/delayed_job -e <%= @framework_env %> stop' - <%= @user %>"
-  group <%= @app_name %>_jobs
+  with pidfile /var/run/engineyard/dj/<%= @app_name %>/dj_.pid
+  start program = "/engineyard/bin/dj <%= @app_name %> start <%= @framework_env %>"
+  stop program = "/engineyard/bin/dj <%= @app_name %> stop <%= @framework_env %>"
+  if totalmem is greater than 120 MB for 2 cycles then restart # eating up memory?
+  group dj_<%= @app_name %>

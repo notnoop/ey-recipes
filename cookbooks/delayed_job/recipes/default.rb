@@ -4,40 +4,44 @@
 #
 
 if ['solo', 'app', 'app_master'].include?(node[:instance_role])
+  user = node[:owner_name]
+  framework_env = node[:environment][:framework_env]
+  # Be sure to replace APP_NAME with the name of your application.
+  # The run_for_app method also accepts multiple application name arguments.
+  run_for_app('syphir') do |app_name, data|
+    worker_name = "#{app_name}_delayed_job"
 
-  # be sure to replace "app_name" with the name of your application.
-  run_for_app("syphir") do |app_name, data|
-
-    worker_name = "delayed_job"
-
-    # The symlink is created in /data/app_name/current/tmp/pids -> /data/app_name/shared/pids, but shared/pids doesn't seem to be?
-    directory "/data/#{app_name}/shared/pids" do
-      owner node[:owner_name]
-      group node[:owner_name]
+    directory "/var/run/engineyard/dj/#{app_name}" do
+      recursive true
+      owner user
+      group user
       mode 0755
     end
 
-    template "/etc/monit.d/delayed_job_worker.#{app_name}.monitrc" do
-      source "delayed_job_worker.monitrc.erb"
-      #owner node[:owner_name]
-      #group node[:owner_name]
+    remote_file "/engineyard/bin/dj" do
+      source "dj"
       owner "root"
       group "root"
+      mode 0755
+      not_if { File.exist?("/engineyard/bin/dj") }
+    end
+
+    template "/etc/monit.d/delayed_job_worker.#{app_name}.monitrc" do
+      source 'delayed_job_worker.monitrc.erb'
+      owner 'root'
+      group 'root'
       mode 0644
-      variables({
+      variables(
         :app_name => app_name,
-        :user => node[:owner_name],
+        :user => user,
         :worker_name => worker_name,
-        :framework_env => node[:environment][:framework_env]
-      })
+        :framework_env => framework_env
+      )
     end
 
-    bash "monit-reload-restart" do
-       user "root"
-       code "pkill -9 monit && monit"
+    bash 'monit-reload-restart' do
+      user 'root'
+      code 'monit reload && monit'
     end
-
   end
-
-
 end
