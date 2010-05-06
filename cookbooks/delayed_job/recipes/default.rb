@@ -6,10 +6,10 @@
 if ['solo', 'app', 'app_master'].include?(node[:instance_role])
 
   # be sure to replace "app_name" with the name of your application.
-  run_for_app("maloca") do |app_name, data|
-  
+  run_for_app("syphir") do |app_name, data|
+
     worker_name = "delayed_job"
-    
+
     # The symlink is created in /data/app_name/current/tmp/pids -> /data/app_name/shared/pids, but shared/pids doesn't seem to be?
     directory "/data/#{app_name}/shared/pids" do
       owner node[:owner_name]
@@ -31,13 +31,13 @@ if ['solo', 'app', 'app_master'].include?(node[:instance_role])
         :framework_env => node[:environment][:framework_env]
       })
     end
-    
+
     bash "monit-reload-restart" do
        user "root"
        code "pkill -9 monit && monit"
     end
-      
+
   end
-  
+
 
 end
